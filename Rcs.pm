@@ -8,12 +8,15 @@ use vars qw($VERSION $revision);
 #------------------------------------------------------------------
 # global stuff
 #------------------------------------------------------------------
-$VERSION = '0.06';
-$revision = '$Id: Rcs.pm,v 1.11 1998/07/05 18:29:06 freter Exp $';
+$VERSION = '0.07';
+$revision = '$Id: Rcs.pm,v 1.14 1998/07/23 01:00:23 freter Exp $';
+my $Dir_Sep = ($^O eq 'MSWin32') ? '\\' : '/';
+my $Exe_Ext = ($^O eq 'MSWin32') ? '.exe' : '';
 my $Rcs_Bin_Dir = '/usr/local/bin';
-my $Rcs_Dir = './RCS';
+my $Rcs_Dir = '.' . $Dir_Sep . 'RCS';
 my $Work_Dir = '.';
 my $Quiet = 1;    # RCS quiet mode
+my $Arc_Ext = ',v';
 
 #------------------------------------------------------------------
 # RCS object constructor
@@ -28,10 +31,12 @@ sub new {
     $self->{"_QUIET"}   = \$Quiet;
     $self->{"_RCSDIR"}  = \$Rcs_Dir;
     $self->{"_WORKDIR"} = \$Work_Dir;
+    $self->{"_ARCEXT"} = \$Arc_Ext;
 
     $self->{FILE}       = undef;
     $self->{ARCFILE}    = undef;
     $self->{AUTHOR}     = undef;
+    $self->{COMMENTS}   = undef;
     $self->{DATE}       = undef;
     $self->{LOCK}       = undef;
     $self->{ACCESS}     = [];
@@ -51,7 +56,7 @@ sub access {
     my $self = shift;
 
     if (not @{ $self->{ACCESS} }) {
-        _parse_rcs($self);
+        _parse_rcs_header($self);
     }
 
     # dereference revisions list
@@ -61,15 +66,35 @@ sub access {
 }
 
 #------------------------------------------------------------------
+# arcext
+# Set the RCS archive file extension (default is ',v').
+#------------------------------------------------------------------
+sub arcext {
+    my $self = shift;
+
+    # called as object method
+    if (ref $self) {
+        if (@_) { ${ $self->{"_ARCEXT"} } = shift };
+        return ${ $self->{"_ARCEXT"} };
+    }
+
+    # called as class method
+    else {
+        if (@_) { $Arc_Ext = shift; }
+        return $Arc_Ext;
+    }
+}
+
+#------------------------------------------------------------------
 # arcfile
 # Name of RCS archive file.
-# If not set then return name of working file with ',v' RCS
-# extension.
+# If not set then return name of working file with RCS
+# extension (',v').
 #------------------------------------------------------------------
 sub arcfile {
     my $self = shift;
     if (@_) { $self->{ARCFILE} = shift }
-    return $self->{ARCFILE} || $self->{FILE} . ',v';
+    return $self->{ARCFILE} || $self->{FILE} . ${ $self->{"_ARCEXT"} };
 }
 
 #------------------------------------------------------------------
@@ -81,7 +106,7 @@ sub author {
     my $self = shift;
 
     if (not defined $self->{AUTHOR}) {
-        _parse_rcs($self);
+        _parse_rcs_header($self);
     }
     my $revision = shift || $self->{HEAD};
 
@@ -122,14 +147,14 @@ sub ci {
     my $self = shift;
     my @param = @_;
 
-    my $ciprog = ${ $self->{"_BINDIR"} } . '/' . 'ci';
+    my $ciprog = ${ $self->{"_BINDIR"} } . $Dir_Sep . 'ci' . $Exe_Ext;
     my $rcsdir = ${ $self->{"_RCSDIR"} };
     my $workdir = ${ $self->{"_WORKDIR"} };
     my $file = $self->{FILE};
     my $arcfile = $self->{ARCFILE} || $file;
 
-    my $archive_file = $rcsdir . '/' . $arcfile . ',v';
-    my $workfile = $workdir . '/' . $file;
+    my $archive_file = $rcsdir . $Dir_Sep . $arcfile . ${ $self->{"_ARCEXT"} };
+    my $workfile = $workdir . $Dir_Sep . $file;
     push @param, $archive_file, $workfile;
     unshift @param, "-q" if ${ $self->{"_QUIET"} };     # quiet mode
 
@@ -138,8 +163,9 @@ sub ci {
     croak "ci program $ciprog not executable" unless -x $ciprog;
     system($ciprog, @param) == 0 or croak "$!";
 
-    # re-parse RCS file
-    _parse_rcs($self);
+    # re-parse RCS file and clear comments hash
+    _parse_rcs_header($self);
+    $self->{COMMENTS}   = undef;
 }
 
 #------------------------------------------------------------------
@@ -152,14 +178,14 @@ sub co {
     my $self = shift;
     my @param = @_;
 
-    my $coprog = ${ $self->{"_BINDIR"} } . '/' . 'co';
+    my $coprog = ${ $self->{"_BINDIR"} } . $Dir_Sep . 'co' . $Exe_Ext;
     my $rcsdir = ${ $self->{"_RCSDIR"} };
     my $workdir = ${ $self->{"_WORKDIR"} };
     my $file = $self->{FILE};
     my $arcfile = $self->{ARCFILE} || $file;
 
-    my $archive_file = $rcsdir . '/' . $arcfile . ',v';
-    my $workfile = $workdir . '/' . $file;
+    my $archive_file = $rcsdir . $Dir_Sep . $arcfile . ${ $self->{"_ARCEXT"} };
+    my $workfile = $workdir . $Dir_Sep . $file;
     push @param, $archive_file, $workfile;
     unshift @param, "-q" if ${ $self->{"_QUIET"} };     # quiet mode
 
@@ -168,8 +194,69 @@ sub co {
     croak "co program $coprog not executable" unless -x $coprog;
     system($coprog, @param) == 0 or croak "$!";
 
-    # re-parse RCS file
-    _parse_rcs($self);
+    # re-parse RCS file and clear comments hash
+    _parse_rcs_header($self);
+    $self->{COMMENTS}   = undef;
+}
+
+#------------------------------------------------------------------
+# comments
+#------------------------------------------------------------------
+sub comments {
+    my $self = shift;
+
+    if (not defined $self->{COMMENTS}) {
+        _parse_rcs_body($self);
+    }
+
+    return %{$self->{COMMENTS}};
+}
+
+#------------------------------------------------------------------
+# daterev
+# Returns a revision which was current at a specified date/time.
+# 0 is returned if all revisions are newer than the date 
+# specified. This usually means the file did not exist on that
+# date.
+# This takes 6 parameters, year (4 digit year), month (1-12), day
+# of month (1-31), hour (0-23), minute (0-59) and second (0-59).
+#------------------------------------------------------------------
+sub daterev {
+    my $self = shift;
+    my($year, $mon, $mday, $hour, $min, $sec) = @_;
+
+    # ensure date has all the elements
+    if(@_ != 6) {
+        croak "daterev must have 6 element date/time (year, month, day, hour, min, sec)";
+    }
+
+    if($year !~ /^\d{4}$/) {
+        croak "year (1st param) must be 4 digit number";
+    }
+
+    if (not defined $self->{DATE}) {
+        _parse_rcs_header($self);
+    }
+
+    $mon--;        # convert to 0-11 range
+    my $target_time = timegm($sec, $min, $hour, $mday, $mon, $year);
+    my @revisions;
+    my %dates;
+
+    my %dates_hash = %{$self->{DATE}};
+    foreach $revision (keys %dates_hash) {
+        my $date = $dates_hash{$revision};
+        $dates{$date}{$revision} = 1;
+    }
+
+    my $date;
+    foreach $date (reverse sort keys %dates) {
+        foreach $revision (keys %{ $dates{$date} }) {
+            push @revisions, $revision if $date <= $target_time;
+        }
+    }
+
+    return wantarray ? @revisions : $revisions[0];
 }
 
 #------------------------------------------------------------------
@@ -185,7 +272,7 @@ sub dates {
     my $self = shift;
 
     if (not defined $self->{DATE}) {
-        _parse_rcs($self);
+        _parse_rcs_header($self);
     }
 
     my %DatesHash = %{$self->{DATE}};
@@ -213,19 +300,20 @@ sub head {
     my $self = shift;
 
     if (not defined $self->{HEAD}) {
-        _parse_rcs($self);
+        _parse_rcs_header($self);
     }
     return $self->{HEAD};
 }
 
 #------------------------------------------------------------------
 # lock
+# Return user who has file locked.
 #------------------------------------------------------------------
 sub lock {
     my $self = shift;
 
     if (not defined $self->{LOCK}) {
-        _parse_rcs($self);
+        _parse_rcs_header($self);
     }
     return $self->{LOCK};
 }
@@ -284,14 +372,14 @@ sub rcs {
     my $self = shift;
     my @param = @_;
 
-    my $rcsprog = ${ $self->{"_BINDIR"} } . '/' . 'rcs';
+    my $rcsprog = ${ $self->{"_BINDIR"} } . $Dir_Sep . 'rcs' . $Exe_Ext;
     my $rcsdir = ${ $self->{"_RCSDIR"} };
     my $workdir = ${ $self->{"_WORKDIR"} };
     my $file = $self->{FILE};
     my $arcfile = $self->{ARCFILE} || $file;
 
-    my $archive_file = $rcsdir . '/' . $arcfile . ',v';
-    my $workfile = $workdir . '/' . $file;
+    my $archive_file = $rcsdir . $Dir_Sep . $arcfile . ${ $self->{"_ARCEXT"} };
+    my $workfile = $workdir . $Dir_Sep . $file;
     push @param, $archive_file, $workfile;
     unshift @param, "-q" if ${ $self->{"_QUIET"} };     # quiet mode
 
@@ -300,8 +388,9 @@ sub rcs {
     croak "rcs program $rcsprog not executable" unless -x $rcsprog;
     system($rcsprog, @param) == 0 or croak "$?";
 
-    # re-parse RCS file
-    _parse_rcs($self);
+    # re-parse RCS file and clear comments hash
+    _parse_rcs_header($self);
+    $self->{COMMENTS}   = undef;
 }
 
 #------------------------------------------------------------------
@@ -312,14 +401,14 @@ sub rcsclean {
     my $self = shift;
     my @param = @_;
 
-    my $rcscleanprog = ${ $self->{"_BINDIR"} } . '/' . 'rcsclean';
+    my $rcscleanprog = ${ $self->{"_BINDIR"} } . $Dir_Sep . 'rcsclean' . $Exe_Ext;
     my $rcsdir = ${ $self->{"_RCSDIR"} };
     my $workdir = ${ $self->{"_WORKDIR"} };
     my $file = $self->{FILE};
     my $arcfile = $self->{ARCFILE} || $file;
 
-    my $archive_file = $rcsdir . '/' . $arcfile . ',v';
-    my $workfile = $workdir . '/' . $file;
+    my $archive_file = $rcsdir . $Dir_Sep . $arcfile . ${ $self->{"_ARCEXT"} };
+    my $workfile = $workdir . $Dir_Sep . $file;
     push @param, $archive_file, $workfile;
 
     # run program
@@ -327,8 +416,9 @@ sub rcsclean {
     croak "rcsclean program $rcscleanprog not executable" unless -x $rcscleanprog;
     system($rcscleanprog, @param) == 0 or croak "$?";
 
-    # re-parse RCS file
-    _parse_rcs($self);
+    # re-parse RCS file and clear comments hash
+    _parse_rcs_header($self);
+    $self->{COMMENTS}   = undef;
 }
 
 #------------------------------------------------------------------
@@ -342,11 +432,11 @@ sub rcsdiff {
     my $self = shift;
     my @param = @_;
 
-    my $rcsdiff_prog = ${ $self->{"_BINDIR"} } . '/' . 'rcsdiff';
+    my $rcsdiff_prog = ${ $self->{"_BINDIR"} } . $Dir_Sep . 'rcsdiff' . $Exe_Ext;
     my $rcsdir = ${ $self->{"_RCSDIR"} };
     my $arcfile = $self->{ARCFILE} || $self->{FILE};
-    $arcfile = $rcsdir . '/' . $arcfile . ',v';
-    my $workfile = $self->workdir . '/' . $self->file;
+    $arcfile = $rcsdir . $Dir_Sep . $arcfile . ${ $self->{"_ARCEXT"} };
+    my $workfile = $self->workdir . $Dir_Sep . $self->file;
 
     # un-taint parameter string
     unshift @param, "-q" if ${ $self->{"_QUIET"} };     # quiet mode
@@ -398,7 +488,7 @@ sub revdate {
     my $self = shift;
 
     if (not defined $self->{DATE}) {
-        _parse_rcs($self);
+        _parse_rcs_header($self);
     }
     my $revision = shift || $self->{HEAD};
 
@@ -416,7 +506,7 @@ sub revisions {
     my $self = shift;
 
     if (not @{ $self->{REVISIONS} }) {
-        _parse_rcs($self);
+        _parse_rcs_header($self);
     }
 
     # dereference revisions list
@@ -435,7 +525,7 @@ sub rlog {
     my $self = shift;
     my @param = @_;
 
-    my $rlogprog = ${ $self->{"_BINDIR"} } . '/' . 'rlog';
+    my $rlogprog = ${ $self->{"_BINDIR"} } . $Dir_Sep . 'rlog' . $Exe_Ext;
     my $rcsdir = ${ $self->{"_RCSDIR"} };
     my $arcfile = $self->{ARCFILE} || $self->{FILE};
 
@@ -443,7 +533,7 @@ sub rlog {
     my $param_str = join(' ', @param);
     $param_str =~ s/([\w-]+)/$1/g;
 
-    my $archive_file = $rcsdir . '/' . $arcfile . ',v';
+    my $archive_file = $rcsdir . $Dir_Sep . $arcfile . ${ $self->{"_ARCEXT"} };
     croak "rlog program $rlogprog not found" unless -e $rlogprog;
     croak "rlog program $rlogprog not executable" unless -x $rlogprog;
     open(RLOG, "$rlogprog $param_str $archive_file |");
@@ -462,7 +552,7 @@ sub state {
     my $self = shift;
 
     if (not defined $self->{STATE}) {
-        _parse_rcs($self);
+        _parse_rcs_header($self);
     }
     my $revision = shift || $self->{HEAD};
 
@@ -480,7 +570,7 @@ sub symbol {
     my $self = shift;
 
     if (not defined $self->{SYMBOLS}) {
-        _parse_rcs($self);
+        _parse_rcs_header($self);
     }
     my $revision = shift || $self->{HEAD};
 
@@ -493,6 +583,78 @@ sub symbol {
 
     # return only first array element if user wants scalar
     return wantarray ? @symbols : $symbols[0];
+}
+
+#------------------------------------------------------------------
+# symbols
+# Returns hash of all revisions keyed on symbol defined against file.
+#------------------------------------------------------------------
+sub symbols {
+    my $self = shift;
+
+    if(not defined $self->{SYMBOLS}) {
+        _parse_rcs_header($self);
+    }
+
+    my %symbols;
+
+    # loop through each revision
+    my $rev;
+    foreach $rev (@{ $self->{REVISIONS} }) {
+        my $sym;
+        foreach $sym (@{ $self->{SYMBOLS}->{$rev} }) {
+            $symbols{$sym} = $rev;
+        }
+    }
+    return %symbols;
+}
+
+#------------------------------------------------------------------
+# symrev
+# Returns the revision against which a specified symbol was
+# defined. If the symbol was not defined against any version
+# of this file, 0 is returned.
+#------------------------------------------------------------------
+sub symrev {
+    my $self = shift;
+    my $sym = shift;
+    if(! defined $sym) {
+        croak "You must supply a symbol to symrev";
+    }
+
+    if (not defined $self->{SYMBOLS}) {
+        _parse_rcs_header($self);
+    }
+
+    my $ret_rev = 0;
+    my %symbols;
+
+    # loop through each revision
+    my $rev;
+    REV_LOOP:
+    foreach $rev (@{ $self->{REVISIONS} }) {
+        # loop through each symbol defined against
+        # this revision
+        my $s;
+        foreach $s (@{ $self->{SYMBOLS}->{$rev} }) {
+
+            # store each revision matching the pattern
+            if (wantarray) {
+                $symbols{$s} = $rev if $s =~ /$sym/;
+            }
+
+            # if it's the one we're looking for, we can
+            # quit as we've found the revision we want
+            else {
+                if($s eq $sym) {
+                    $ret_rev = $rev;
+                    last REV_LOOP;
+                }
+            }
+        }
+    }
+
+    return wantarray ? %symbols : $ret_rev;
 }
 
 #------------------------------------------------------------------
@@ -516,11 +678,66 @@ sub workdir {
 }
 
 #------------------------------------------------------------------
-# _parse_rcs
+# _parse_rcs_body
+# Private function
+#------------------------------------------------------------------
+sub _parse_rcs_body {
+
+    my $self = shift;
+    local $_;
+
+    my %comments;
+
+    my $rcsdir = ${ $self->{"_RCSDIR"} };
+    my $file = $self->{FILE};
+    my $rcs_file = $rcsdir . $Dir_Sep . $file . ${ $self->{"_ARCEXT"} };
+
+    # parse RCS archive file
+    open RCS_FILE, $rcs_file
+        or croak "Unable to open $rcs_file";
+
+    # skip header info and get description
+    DESC: while (<RCS_FILE>) {
+        if (/^desc$/) {
+            while (1) {
+                $_ = <RCS_FILE>;
+                (chomp $comments{0} and last DESC)
+                    if /^\@$/;
+                s/^\@//;
+                $comments{0} .= $_;
+            }
+        }
+    }
+
+    # parse body
+    my $revision;
+    REVISION: while (<RCS_FILE>) {
+        if (/^[\d\.]+$/) {
+            chomp(my $revision = $_);
+            my $next = <RCS_FILE>;
+            if ($next =~ /^log$/) {
+                while (1) {
+                    $_ = <RCS_FILE>;
+                    (chomp $comments{$revision} and next REVISION)
+                        if /^\@$/;
+                    s/^\@//;
+                    $comments{$revision} .= $_;
+                }
+            }
+        }
+    }
+    close RCS_FILE;
+
+    $self->{COMMENTS} = \%comments;
+
+}
+
+#------------------------------------------------------------------
+# _parse_rcs_header
 # Private function
 # Directly parse the RCS archive file.
 #------------------------------------------------------------------
-sub _parse_rcs {
+sub _parse_rcs_header {
 
     my $self = shift;
     local $_;
@@ -531,10 +748,11 @@ sub _parse_rcs {
 
     my $rcsdir = ${ $self->{"_RCSDIR"} };
     my $file = $self->{FILE};
+    my $rcs_file = $rcsdir . $Dir_Sep . $file . ${ $self->{"_ARCEXT"} };
 
     # parse RCS archive file
-    open RCS_FILE, "$rcsdir/$file,v"
-        or croak "Unable to open $rcsdir/$file,v";
+    open RCS_FILE, $rcs_file
+        or croak "Unable to open $rcs_file";
     while (<RCS_FILE>) {
         next if /^\s*$/;    # skip blank lines
         last if /^desc$/;   # end of header info
@@ -625,7 +843,7 @@ __END__
 
 =head1 NAME
 
-Rcs - Perl Class for Revision Control System (RCS).
+Rcs - Perl Object Class for Revision Control System (RCS).
 
 =head1 SYNOPSIS
 
@@ -651,8 +869,16 @@ method to create a new object.
 
 =head2 CLASS METHODS
 
-Besides the object constructor, there are two class methods provided
+Besides the object constructor, there are three class methods provided
 which effect any newly created objects.
+
+The B<arcext> method sets the RCS archive extension, which is ',v' by
+default.
+
+    # set/unset RCS archive extension
+    Rcs->arcext('');            # set no archive extension
+    Rcs->arcext(',v');          # set archive extension to ',v'
+    $arc_ext = Rcs->arcext();   # get current archive extension
 
 The B<bindir> method sets the directory path where the RCS executables
 (i.e. rcs, ci, co) are located.  The default location is '/usr/local/bin'.
@@ -664,7 +890,7 @@ The B<bindir> method sets the directory path where the RCS executables
     $bin_dir = Rcs->bindir;
 
 The B<quiet> method sets/unsets the quiet mode for the RCS executables.
-Quiet mode is set bt default.
+Quiet mode is set by default.
 
     # set/unset RCS quiet mode
     Rcs->quiet(0);      # unset quiet mode
@@ -675,6 +901,7 @@ Quiet mode is set bt default.
 
 These methods may also be called as object methods.
 
+    $obj->arcext('');
     $obj->bindir('/usr/bin');
     $obj->quiet(0);
 
@@ -691,7 +918,7 @@ object.
 The B<arcfile> method is used to set the name of the RCS archive file.
 Using this method is optional, as the other methods will assume the archive
 filename is the same as the working file unless specified otherwise.  The
-',v' RCS archive extension is automatically added to the filename.
+RCS archive extension (default ',v') is automatically added to the filename.
 
     $obj->arcfile('principle_mcvicker.pl');
 
@@ -749,7 +976,7 @@ is used if no revision argument is passed to method.
     # returns state of head revision
     $state = $obj->state;
 
-The B<symbol> method returns the sysbol(s) associated with a revision.
+The B<symbol> method returns the symbol(s) associated with a revision.
 If called in list context, method returns all symbols associated with
 revision.  If called in scalar context, method returns last symbol
 assciated with a revision.  The head revision is used if no revision argument
@@ -766,6 +993,14 @@ is passed to method.
 
     # scalar context, returns last symbol associated with head revision
     $symbol = $obj->symbol;
+
+The B<symbols> method returns a hash, keyed by symbol, of all of the revisions
+associated with the file.
+
+    %symbols = $obj->symbols;
+    foreach $sym (keys %symbols) {
+        $rev = $symbols{$sym};
+    }
 
 The B<revdate> method returns the date of a revision.  The returned date format
 is the same as the localtime format.  When called as a scalar, it returns the 
@@ -796,6 +1031,27 @@ returns the most recent revision date.
     print "Most recent date = $most_recent\n";
     $most_recent_str = localtime($most_recent);
     print "Most recent date string = $most_recent_str\n";
+
+The B<symrev> method returns the revision against which a specified symbol was
+defined. If the symbol was not defined against any version of this file, 0 is
+returned.
+
+    # gets revision that has 'MY_SYMBOL' defined against it
+    $rev = symrev('MY_SYMBOL');
+
+The B<daterev> method returns a revision which was current at a specified
+date/time. If all revisions are newer than the specified date/time, i.e. the
+file did not exist then, 0 is returned.
+
+    # gets revision that was active on 25th June 1998 16:45:30
+    $rev = daterev(1998, 6, 25, 16, 45, 30);
+
+The B<comments> method returns a hash of revision comments, keyed on revision.
+A key value of 0 returns the description.
+
+    %comments = $obj->comments;
+    $description = $comments{0};
+    $comment_1_3 = $comments{'1.3'};
 
 =head2 RCS SYSTEM METHODS
 
@@ -1033,11 +1289,16 @@ Method B<rcsclean> will remove an unlocked working file.
 
 Craig Freter, E<lt>F<craig@freter.com>E<gt>
 
-=head1 CONTRIBUTOR
+=head1 CONTRIBUTORS
 
 David Green, E<lt>F<greendjf@cvhp152.gpt.co.uk>E<gt>
 
-David Green contributed the B<dates> method.
+    David Green contributed the B<dates> method.
+
+Jamie O'Shaughnessy, E<lt>F<jamie@thanatar.demon.co.uk>E<gt>
+
+    Contributed NT port.
+    Contributed methods B<daterev>, B<symrev>, and B<symbols>.
 
 =head1 COPYRIGHT
 
@@ -1046,3 +1307,4 @@ This program is free software; you can redistribute it and/or
 modify it under the same terms as Perl itself.
 
 =cut
+

@@ -1,20 +1,23 @@
 #!/usr/local/bin/perl -w
 #------------------------------------------
-# Use rlog utility.
+# Test symrev method
 #------------------------------------------
 use strict;
 use Rcs;
 
+Rcs->bindir('/usr/bin');
 my $obj = Rcs->new;
-
-# call quiet and bindir as objest methods
-$obj->quiet(1);
-$obj->bindir('/usr/bin');
-
-print "Quiet mode set\n" if Rcs->quiet;
 
 $obj->rcsdir("./project/RCS");
 $obj->workdir("./project/src");
 $obj->file("testfile");
 
-print $obj->rlog;
+my %symbols = $obj->symbols;
+my $sym;
+foreach $sym (keys %symbols) {
+    my $rev = $symbols{$sym};
+    print "Symbol : Revision = $sym : $rev\n";
+}
+
+my @syms = keys %symbols;
+print "@syms\n";

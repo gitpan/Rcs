@@ -1,6 +1,6 @@
     <HTML> 
 	<HEAD> 
-	    <TITLE>Rcs - Perl Class for Revision Control System (RCS).
+	    <TITLE>Rcs - Perl Object Class for Revision Control System (RCS).
 
 </TITLE> 
 	</HEAD>
@@ -35,7 +35,7 @@
 	</UL>
 
 	<LI><A HREF="#AUTHOR">AUTHOR</A>
-	<LI><A HREF="#CONTRIBUTOR">CONTRIBUTOR</A>
+	<LI><A HREF="#CONTRIBUTORS">CONTRIBUTORS</A>
 	<LI><A HREF="#COPYRIGHT">COPYRIGHT</A>
 </UL>
 <!-- INDEX END -->
@@ -45,7 +45,7 @@
 <H1><A NAME="NAME">NAME
 
 </A></H1>
-Rcs - Perl Class for Revision Control System (RCS).
+Rcs - Perl Object Class for Revision Control System (RCS).
 
 
 <P>
@@ -100,9 +100,22 @@ new object.
 <H2><A NAME="CLASS_METHODS">CLASS METHODS
 
 </A></H2>
-Besides the object constructor, there are two class methods provided which
-effect any newly created objects.
+Besides the object constructor, there are three class methods provided
+which effect any newly created objects.
 
+
+<P>
+
+The <STRONG>arcext</STRONG> method sets the RCS archive extension, which is ',v' by default.
+
+
+<P>
+
+<PRE>    # set/unset RCS archive extension
+    Rcs-&gt;arcext('');            # set no archive extension
+    Rcs-&gt;arcext(',v');          # set archive extension to ',v'
+    $arc_ext = Rcs-&gt;arcext();   # get current archive extension
+</PRE>
 
 <P>
 
@@ -125,7 +138,7 @@ are located. The default location is '/usr/local/bin'.
 <P>
 
 The <STRONG>quiet</STRONG> method sets/unsets the quiet mode for the RCS executables. Quiet mode is
-set bt default.
+set by default.
 
 
 <P>
@@ -148,7 +161,8 @@ These methods may also be called as object methods.
 
 <P>
 
-<PRE>    $obj-&gt;bindir('/usr/bin');
+<PRE>    $obj-&gt;arcext('');
+    $obj-&gt;bindir('/usr/bin');
     $obj-&gt;quiet(0);
 </PRE>
 
@@ -177,8 +191,8 @@ be set before invoking any access of modifier methods on the object.
 
 The <STRONG>arcfile</STRONG> method is used to set the name of the RCS archive file. Using this method
 is optional, as the other methods will assume the archive filename is the
-same as the working file unless specified otherwise. The ',v' RCS archive
-extension is automatically added to the filename.
+same as the working file unless specified otherwise. The RCS archive
+extension (default ',v') is automatically added to the filename.
 
 
 <P>
@@ -305,7 +319,7 @@ revision argument is passed to method.
 
 <P>
 
-The <STRONG>symbol</STRONG> method returns the <CODE>sysbol(s)</CODE> associated with a revision. If
+The <STRONG>symbol</STRONG> method returns the <CODE>symbol(s)</CODE> associated with a revision. If
 called in list context, method returns all symbols associated with
 revision. If called in scalar context, method returns last symbol assciated
 with a revision. The head revision is used if no revision argument is
@@ -334,6 +348,20 @@ passed to method.
 
 <PRE>    # scalar context, returns last symbol associated with head revision
     $symbol = $obj-&gt;symbol;
+</PRE>
+
+<P>
+
+The <STRONG>symbols</STRONG> method returns a hash, keyed by symbol, of all of the revisions associated
+with the file.
+
+
+<P>
+
+<PRE>    %symbols = $obj-&gt;symbols;
+    foreach $sym (keys %symbols) {
+        $rev = $symbols{$sym};
+    }
 </PRE>
 
 <P>
@@ -382,6 +410,45 @@ most recent revision date.
     print &quot;Most recent date = $most_recent\n&quot;;
     $most_recent_str = localtime($most_recent);
     print &quot;Most recent date string = $most_recent_str\n&quot;;
+</PRE>
+
+<P>
+
+The <STRONG>symrev</STRONG> method returns the revision against which a specified symbol was defined.
+If the symbol was not defined against any version of this file, 0 is
+returned.
+
+
+<P>
+
+<PRE>    # gets revision that has 'MY_SYMBOL' defined against it
+    $rev = symrev('MY_SYMBOL');
+</PRE>
+
+<P>
+
+The <STRONG>daterev</STRONG> method returns a revision which was current at a specified date/time. If
+all revisions are newer than the specified date/time, i.e. the file did not
+exist then, 0 is returned.
+
+
+<P>
+
+<PRE>    # gets revision that was active on 25th June 1998 16:45:30
+    $rev = daterev(1998, 6, 25, 16, 45, 30);
+</PRE>
+
+<P>
+
+The <STRONG>comments</STRONG> method returns a hash of revision comments, keyed on revision. A key value
+of 0 returns the description.
+
+
+<P>
+
+<PRE>    %comments = $obj-&gt;comments;
+    $description = $comments{0};
+    $comment_1_3 = $comments{'1.3'};
 </PRE>
 
 <P>
@@ -847,7 +914,7 @@ Craig Freter, &lt;<EM>craig@freter.com</EM>&gt;
 
 <P>
 <HR>
-<H1><A NAME="CONTRIBUTOR">CONTRIBUTOR
+<H1><A NAME="CONTRIBUTORS">CONTRIBUTORS
 
 </A></H1>
 David Green, &lt;<EM>greendjf@cvhp152.gpt.co.uk</EM>&gt;
@@ -857,8 +924,21 @@ David Green, &lt;<EM>greendjf@cvhp152.gpt.co.uk</EM>&gt;
 
 <P>
 
-David Green contributed the <STRONG>dates</STRONG> method.
+<PRE>    David Green contributed the B&lt;dates&gt; method.
+</PRE>
 
+<P>
+
+Jamie O'Shaughnessy, &lt;<EM>jamie@thanatar.demon.co.uk</EM>&gt;
+
+
+
+
+<P>
+
+<PRE>    Contributed NT port.
+    Contributed methods B&lt;daterev&gt;, B&lt;symrev&gt;, and B&lt;symbols&gt;.
+</PRE>
 
 <P>
 

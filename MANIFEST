@@ -18,4 +18,9 @@ examples/ci-tree.pl
 examples/co-tree.pl
 examples/dates.pl
 examples/unlock.pl
+examples/symbols.pl
+examples/daterev.pl
+examples/mark.pl
+examples/symrev.pl
+examples/comments.pl
 test.pl

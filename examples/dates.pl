@@ -5,7 +5,7 @@
 use strict;
 use Rcs;
 
-Rcs->bindir('/usr/bin');
+#Rcs->bindir('/usr/bin');
 my $obj = Rcs->new;
 
 $obj->rcsdir("./project/RCS");
