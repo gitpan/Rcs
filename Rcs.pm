@@ -2,14 +2,17 @@ package Rcs;
 require 5.001;
 use strict;
 use Carp;
+use Time::Local;
 use vars qw($VERSION $revision);
 
 #------------------------------------------------------------------
 # global stuff
 #------------------------------------------------------------------
-$VERSION = '0.04';
-$revision = '$Id: Rcs.pm,v 1.7.1.1 1998/03/08 01:12:35 freter Exp $';
+$VERSION = '0.05';
+$revision = '$Id: Rcs.pm,v 1.10 1998/05/09 21:45:49 freter Exp $';
 my $Rcs_Bin_Dir = '/usr/local/bin';
+my $Rcs_Dir = './RCS';
+my $Work_Dir = '.';
 my $Quiet = 1;    # RCS quiet mode
 
 #------------------------------------------------------------------
@@ -21,14 +24,15 @@ sub new {
     my $self  = {};
 
     # provide default values for system stuff
-    $self->{RCSDIR}     = './RCS';
-    $self->{WORKDIR}    = '.';
     $self->{"_BINDIR"}  = \$Rcs_Bin_Dir;
     $self->{"_QUIET"}   = \$Quiet;
+    $self->{"_RCSDIR"}  = \$Rcs_Dir;
+    $self->{"_WORKDIR"} = \$Work_Dir;
 
     $self->{FILE}       = undef;
     $self->{ARCFILE}    = undef;
     $self->{AUTHOR}     = undef;
+    $self->{DATE}       = undef;
     $self->{LOCK}       = undef;
     $self->{ACCESS}     = [];
     $self->{REVISIONS}  = [];
@@ -97,32 +101,14 @@ sub bindir {
 
     # called as object method
     if (ref $self) {
-
-        # set bin dir
-        if (@_) {
-            ${ $self->{"_BINDIR"} } = shift;
-            return ${ $self->{"_BINDIR"} };
-        }
-
-        # access bin dir
-        else {
-            return ${ $self->{"_BINDIR"} };
-        }
+        if (@_) { ${ $self->{"_BINDIR"} } = shift };
+        return ${ $self->{"_BINDIR"} };
     }
 
     # called as class method
     else {
-
-        # set bin dir
-        if (@_) {
-            $Rcs_Bin_Dir = shift;
-            return $Rcs_Bin_Dir;
-        }
-
-        # access bin dir
-        else {
-            return $Rcs_Bin_Dir;
-        }
+        if (@_) { $Rcs_Bin_Dir = shift };
+        return $Rcs_Bin_Dir;
     }
 }
 
@@ -137,8 +123,8 @@ sub ci {
     my @param = @_;
 
     my $ciprog = ${ $self->{"_BINDIR"} } . '/' . 'ci';
-    my $rcsdir = $self->{RCSDIR};
-    my $workdir = $self->{WORKDIR};
+    my $rcsdir = ${ $self->{"_RCSDIR"} };
+    my $workdir = ${ $self->{"_WORKDIR"} };
     my $file = $self->{FILE};
     my $arcfile = $self->{ARCFILE} || $file;
 
@@ -167,8 +153,8 @@ sub co {
     my @param = @_;
 
     my $coprog = ${ $self->{"_BINDIR"} } . '/' . 'co';
-    my $rcsdir = $self->{RCSDIR};
-    my $workdir = $self->{WORKDIR};
+    my $rcsdir = ${ $self->{"_RCSDIR"} };
+    my $workdir = ${ $self->{"_WORKDIR"} };
     my $file = $self->{FILE};
     my $arcfile = $self->{ARCFILE} || $file;
 
@@ -276,8 +262,8 @@ sub rcs {
     my @param = @_;
 
     my $rcsprog = ${ $self->{"_BINDIR"} } . '/' . 'rcs';
-    my $rcsdir = $self->{RCSDIR};
-    my $workdir = $self->{WORKDIR};
+    my $rcsdir = ${ $self->{"_RCSDIR"} };
+    my $workdir = ${ $self->{"_WORKDIR"} };
     my $file = $self->{FILE};
     my $arcfile = $self->{ARCFILE} || $file;
 
@@ -304,8 +290,8 @@ sub rcsclean {
     my @param = @_;
 
     my $rcscleanprog = ${ $self->{"_BINDIR"} } . '/' . 'rcsclean';
-    my $rcsdir = $self->{RCSDIR};
-    my $workdir = $self->{WORKDIR};
+    my $rcsdir = ${ $self->{"_RCSDIR"} };
+    my $workdir = ${ $self->{"_WORKDIR"} };
     my $file = $self->{FILE};
     my $arcfile = $self->{ARCFILE} || $file;
 
@@ -334,7 +320,7 @@ sub rcsdiff {
     my @param = @_;
 
     my $rcsdiff_prog = ${ $self->{"_BINDIR"} } . '/' . 'rcsdiff';
-    my $rcsdir = $self->{RCSDIR};
+    my $rcsdir = ${ $self->{"_RCSDIR"} };
     my $arcfile = $self->{ARCFILE} || $self->{FILE};
     $arcfile = $rcsdir . '/' . $arcfile . ',v';
     my $workfile = $self->workdir . '/' . $self->file;
@@ -363,8 +349,45 @@ sub rcsdiff {
 #------------------------------------------------------------------
 sub rcsdir {
     my $self = shift;
-    if (@_) { $self->{RCSDIR} = shift }
-    return $self->{RCSDIR};
+
+    # called as object method
+    if (ref $self) {
+        if (@_) { ${ $self->{"_RCSDIR"} } = shift }
+        return ${ $self->{"_RCSDIR"} };
+    }
+
+    # called as class method
+    else {
+        if (@_) { $Rcs_Dir = shift }
+        return $Rcs_Dir;
+    }
+}
+
+#------------------------------------------------------------------
+# revdate
+# Return the revision date of an RCS revision.
+# If revision is not provided, default to 'head' revision.
+#
+# RCS stores dates in GMT.  This method will return dates relative
+# to the local time zone.
+#------------------------------------------------------------------
+sub revdate {
+    my $self = shift;
+
+    if (not defined $self->{DATE}) {
+        _parse_rcs($self);
+    }
+    my $revision = shift || $self->{HEAD};
+
+    # dereference date hash
+    my %date_array = %{ $self->{DATE} };
+    my $date_str = $date_array{$revision};
+
+    my ($year, $mon, $mday, $hour, $min, $sec) = split(/\./, $date_str);
+    $mon--;        # convert to 0-11 range
+    my @date = ($sec,$min,$hour,$mday,$mon,$year);
+
+    return wantarray ? localtime(timegm(@date)) : timegm(@date);
 }
 
 #------------------------------------------------------------------
@@ -394,7 +417,7 @@ sub rlog {
     my @param = @_;
 
     my $rlogprog = ${ $self->{"_BINDIR"} } . '/' . 'rlog';
-    my $rcsdir = $self->{RCSDIR};
+    my $rcsdir = ${ $self->{"_RCSDIR"} };
     my $arcfile = $self->{ARCFILE} || $self->{FILE};
 
     # un-taint parameter string
@@ -459,8 +482,18 @@ sub symbol {
 #------------------------------------------------------------------
 sub workdir {
     my $self = shift;
-    if (@_) { $self->{WORKDIR} = shift }
-    return $self->{WORKDIR};
+
+    # called as object method
+    if (ref $self) {
+        if (@_) { ${ $self->{"_WORKDIR"} } = shift }
+        return ${ $self->{"_WORKDIR"} };
+    }
+
+    # called as class method
+    else {
+        if (@_) { $Work_Dir = shift }
+        return $Work_Dir;
+    }
 }
 
 #------------------------------------------------------------------
@@ -475,9 +508,9 @@ sub _parse_rcs {
 
     my ($head, $lock);
     my (@access_list, @revisions);
-    my (%author, %state, %symbols);
+    my (%author, %date, %state, %symbols);
 
-    my $rcsdir = $self->{RCSDIR};
+    my $rcsdir = ${ $self->{"_RCSDIR"} };
     my $file = $self->{FILE};
 
     # parse RCS archive file
@@ -538,12 +571,14 @@ sub _parse_rcs {
             chomp;
             push @revisions, $_;
 
-            # get author and state of each revision
+            # get author, date and state of each revision
             my $next_line = <RCS_FILE>;
+            chop(my $date   = (split(/\s+/, $next_line))[1]);
             chop(my $author = (split(/\s+/, $next_line))[3]);
             chop(my $state  = (split(/\s+/, $next_line))[5]);
+            $date{$_} =   $date;
             $author{$_} = $author;
-            $state{$_} = $state;
+            $state{$_} =  $state;
         }
     }
     close RCS_FILE;
@@ -553,6 +588,7 @@ sub _parse_rcs {
     $self->{ACCESS}      = \@access_list;
     $self->{REVISIONS}   = \@revisions;
     $self->{AUTHOR}      = \%author;
+    $self->{DATE}        = \%date;
     $self->{STATE}       = \%state;
     $self->{SYMBOLS}     = \%symbols;
 }
@@ -687,7 +723,7 @@ is used if no revision argument is passed to method.
     # returns state of head revision
     $state = $obj->state;
 
-The B<sysbol> method returns the sysbol(s) associated with a revision.
+The B<symbol> method returns the sysbol(s) associated with a revision.
 If called in list context, method returns all symbols associated with
 revision.  If called in scalar context, method returns last symbol
 assciated with revision.  The head revision is used if no revision argument
@@ -704,6 +740,21 @@ is passed to method.
 
     # scalar context, returns last symbol associated with head revision
     $symbol = $obj->symbol;
+
+The B<revdate> method returns the date of a revision.  The returned date format
+is the same as the localtime format.  When called as a scalar, it returns the 
+system date number.  If called is list context, the list
+($sec,$min,$hour,$mday,$mon,$year,$wday,$yday,$isdst) is returned.
+
+    # scalar mode
+    $scalar_date = $obj->revdate;
+    print "Scalar date number = $scalar_date\n";
+    $date_str = localtime($scalar_date);
+    print "Scalar date string = $date_str\n";
+
+    # list mode
+    @list_date = $obj->revdate;
+    print "List date = @list_date\n";
 
 =head2 RCS SYSTEM METHODS
 

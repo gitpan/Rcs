@@ -11,9 +11,9 @@ $obj->bindir('/usr/bin');
 
 print "Quiet mode set\n" if Rcs->quiet;
 
-$obj->rcsdir("./project_tree/archive");
-$obj->workdir("./project_tree/src");
-$obj->file("cornholio.pl");
+$obj->rcsdir("./project/RCS");
+$obj->workdir("./project/src");
+$obj->file("testfile");
 
 # archive file exists
 if (! -e $obj->rcsdir . '/' . $obj->arcfile) {

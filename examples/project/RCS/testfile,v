@@ -1,0 +1,25 @@
+head	1.1;
+access;
+symbols;
+locks; strict;
+comment	@# @;
+
+
+1.1
+date	98.05.09.21.31.05;	author freter;	state Exp;
+branches;
+next	;
+
+
+desc
+@Program Description
+@
+
+
+1.1
+log
+@Initial revision
+@
+text
+@testing
+@
