@@ -422,20 +422,29 @@ returned.
 <P>
 
 <PRE>    # gets revision that has 'MY_SYMBOL' defined against it
-    $rev = symrev('MY_SYMBOL');
+    $rev = $obj-&gt;symrev('MY_SYMBOL');
 </PRE>
 
 <P>
 
-The <STRONG>daterev</STRONG> method returns a revision which was current at a specified date/time. If
-all revisions are newer than the specified date/time, i.e. the file did not
-exist then, 0 is returned.
+The <STRONG>daterev</STRONG> method returns revisions which were created before a specified date. Method
+may take one or six arguments. If one arguments is passed, then the
+argument is a date number. If six arguments are passed, then they represent
+a date string.
 
 
 <P>
 
-<PRE>    # gets revision that was active on 25th June 1998 16:45:30
-    $rev = daterev(1998, 6, 25, 16, 45, 30);
+<PRE>    # one argument, date number
+    # gets revisions created before Sun Sep  6 22:23:47 1998
+    @revs = $obj-&gt;daterev(841436420);
+</PRE>
+
+<P>
+
+<PRE>    # six argument
+    # gets revisions created before 25th June 1998 16:45:30
+    @revs = $obj-&gt;daterev(1998, 6, 25, 16, 45, 30);
 </PRE>
 
 <P>
@@ -924,21 +933,10 @@ David Green, &lt;<EM>greendjf@cvhp152.gpt.co.uk</EM>&gt;
 
 <P>
 
-<PRE>    David Green contributed the B&lt;dates&gt; method.
-</PRE>
-
-<P>
-
 Jamie O'Shaughnessy, &lt;<EM>jamie@thanatar.demon.co.uk</EM>&gt;
 
 
 
-
-<P>
-
-<PRE>    Contributed NT port.
-    Contributed methods B&lt;daterev&gt;, B&lt;symrev&gt;, and B&lt;symbols&gt;.
-</PRE>
 
 <P>
 

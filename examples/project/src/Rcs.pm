@@ -9,7 +9,7 @@ use vars qw($VERSION $revision);
 # global stuff
 #------------------------------------------------------------------
 $VERSION = '0.08';
-$revision = '$Id: Rcs.pm,v 1.14.1.2 1998/09/11 07:38:48 freter Exp $';
+$revision = '$Id: Rcs.pm,v 1.14 1998/07/23 01:00:23 freter Exp freter $';
 my $Dir_Sep = ($^O eq 'MSWin32') ? '\\' : '/';
 my $Exe_Ext = ($^O eq 'MSWin32') ? '.exe' : '';
 my $Rcs_Bin_Dir = '/usr/local/bin';
@@ -214,56 +214,36 @@ sub comments {
 
 #------------------------------------------------------------------
 # daterev
-#
-# Returns revisions which were created before a specified date.
-#
-# Method takes one or six arguments.
-#
-# If one argument, then argument is date number.
-#
-# If six arguments, then year (4 digit year), month (1-12), day
+# Returns a revision which was current at a specified date/time.
+# 0 is returned if all revisions are newer than the date 
+# specified. This usually means the file did not exist on that
+# date.
+# This takes 6 parameters, year (4 digit year), month (1-12), day
 # of month (1-31), hour (0-23), minute (0-59) and second (0-59).
 #------------------------------------------------------------------
 sub daterev {
-
     my $self = shift;
-    my $target_time;
+    my($year, $mon, $mday, $hour, $min, $sec) = @_;
 
-    # validate arguments
-    unless (@_ == 1 or @_ == 6) {
-        croak "daterev must have either 1 or 6 arguments";
+    # ensure date has all the elements
+    if(@_ != 6) {
+        croak "daterev must have 6 element date/time (year, month, day, hour, min, sec)";
     }
 
-    # string date passed
-    if (@_ == 6) {
-        my($year, $mon, $mday, $hour, $min, $sec) = @_;
-
-        if($year !~ /^\d{4}$/) {
-            croak "year (1st param) must be 4 digit number";
-        }
-
-        $mon--;        # convert to 0-11 range
-        $target_time = timegm($sec, $min, $hour, $mday, $mon, $year);
-    }
-
-    # system date passed
-    else {
-        $target_time = shift;
-
-        if ($target_time !~ /^\d+$/) {
-            croak "system date must be an integer";
-        }
+    if($year !~ /^\d{4}$/) {
+        croak "year (1st param) must be 4 digit number";
     }
 
     if (not defined $self->{DATE}) {
         _parse_rcs_header($self);
     }
 
-    my @revisions = ();
+    $mon--;        # convert to 0-11 range
+    my $target_time = timegm($sec, $min, $hour, $mday, $mon, $year);
+    my @revisions;
     my %dates;
-    my %dates_hash = %{$self->{DATE}};
 
-    my $revision;
+    my %dates_hash = %{$self->{DATE}};
     foreach $revision (keys %dates_hash) {
         my $date = $dates_hash{$revision};
         $dates{$date}{$revision} = 1;
@@ -719,11 +699,11 @@ sub _parse_rcs_body {
     DESC: while (<RCS_FILE>) {
         if (/^desc$/) {
             $comments{0} = '';
-            $_ = <RCS_FILE>;      # read first line
-            s/^\@//;              # remove leading '@'
+            $_ = <RCS_FILE>;
+            s/^\@//;  # remove leading '@'
             while (1) {
                 last DESC if /^\@$/;
-                s/\@\@/\@/g;      # RCS replaces single '@' with '@@'
+                s/\@\@/\@/g;   # RCS replaces single '@' with '@@'
                 $comments{0} .= $_;
                 $_ = <RCS_FILE>;
             }
@@ -738,11 +718,11 @@ sub _parse_rcs_body {
             $_ = <RCS_FILE>;
             if (/^log$/) {
                 $comments{$revision} = '';
-                $_ = <RCS_FILE>;  # read first line
-                s/^\@//;          # remove leading '@'
+                $_ = <RCS_FILE>;
+                s/^\@//;  # remove leading '@'
                 while (1) {
                     next REVISION if /^\@$/;
-                    s/\@\@/\@/g;  # RCS replaces single '@' with '@@'
+                    s/\@\@/\@/g;   # RCS replaces single '@' with '@@'
                     $comments{$revision} .= $_;
                     $_ = <RCS_FILE>;
                 }
@@ -750,14 +730,15 @@ sub _parse_rcs_body {
         }
     }
 
-    # loop through 'text' section to avoid capturing bogus info
+    # loop through 'text' section to avoid capturing false comments
     continue {
-        if (/^text$/) {  # 'text' tag should always be there, but check anyway
+        if (/^text$/) {
             while (<RCS_FILE>) {last if /^\@$/}
         }
     }
 
     close RCS_FILE;
+
     $self->{COMMENTS} = \%comments;
 }
 
@@ -1066,20 +1047,14 @@ defined. If the symbol was not defined against any version of this file, 0 is
 returned.
 
     # gets revision that has 'MY_SYMBOL' defined against it
-    $rev = $obj->symrev('MY_SYMBOL');
+    $rev = symrev('MY_SYMBOL');
 
-The B<daterev> method returns revisions which were created before a specified
-date.  Method may take one or six arguments.  If one arguments is passed, then
-the argument is a date number.  If six arguments are passed, then they represent
-a date string.
+The B<daterev> method returns a revision which was current at a specified
+date/time. If all revisions are newer than the specified date/time, i.e. the
+file did not exist then, 0 is returned.
 
-    # one argument, date number
-    # gets revisions created before Sun Sep  6 22:23:47 1998
-    @revs = $obj->daterev(841436420);
-
-    # six argument
-    # gets revisions created before 25th June 1998 16:45:30
-    @revs = $obj->daterev(1998, 6, 25, 16, 45, 30);
+    # gets revision that was active on 25th June 1998 16:45:30
+    $rev = daterev(1998, 6, 25, 16, 45, 30);
 
 The B<comments> method returns a hash of revision comments, keyed on revision.
 A key value of 0 returns the description.
@@ -1328,7 +1303,12 @@ Craig Freter, E<lt>F<craig@freter.com>E<gt>
 
 David Green, E<lt>F<greendjf@cvhp152.gpt.co.uk>E<gt>
 
+    David Green contributed the B<dates> method.
+
 Jamie O'Shaughnessy, E<lt>F<jamie@thanatar.demon.co.uk>E<gt>
+
+    Contributed NT port.
+    Contributed methods B<daterev>, B<symrev>, and B<symbols>.
 
 =head1 COPYRIGHT
 

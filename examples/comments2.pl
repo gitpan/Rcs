@@ -11,11 +11,11 @@ my $obj = Rcs->new;
 
 $obj->rcsdir("./project/RCS");
 $obj->workdir("./project/src");
-$obj->file("testfile");
+$obj->file("Rcs.pm");
 
 my %comments = $obj->comments;
 my $revision;
-foreach $revision (keys %comments) {
+foreach $revision (sort keys %comments) {
     #my $comments = $comments{$revision} ? $comments{$revision} : 'GGG';
     my $comments = $comments{$revision};
     print "======\n";

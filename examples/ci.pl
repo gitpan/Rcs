@@ -18,11 +18,11 @@ $obj->file("testfile");
 # archive file exists
 if (! -e $obj->rcsdir . '/' . $obj->arcfile) {
     print "Initial Check-in\n";
-    $obj->ci("-u", "-t-Program Description");
+    $obj->ci("-u");
 }
 
 # create archive file
 else {
     print "Check-in\n";
-    $obj->ci("-u", "-mRevision Comment");
+    $obj->ci("-l");
 }
