@@ -2,14 +2,12 @@
 #------------------------------------------
 # rcsclean utility
 #------------------------------------------
-use Version::Rcs;
+use Rcs;
 
-Version::Rcs->quiet(0);      # turn off quiet mode
-Version::Rcs->bindir("/usr/bin");
+Rcs->quiet(0);      # turn off quiet mode
+$obj = Rcs->new;
 
-$obj = Version::Rcs->new;
-
-print "Quiet mode NOT set\n" unless Version::Rcs->quiet;
+print "Quiet mode NOT set\n" unless Rcs->quiet;
 
 $obj->rcsdir("./project_tree/archive");
 $obj->workdir("./project_tree/src");

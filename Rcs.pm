@@ -1,4 +1,4 @@
-package Version::Rcs;
+package Rcs;
 require 5.001;
 use strict;
 use Carp;
@@ -7,8 +7,8 @@ use vars qw($VERSION $revision);
 #------------------------------------------------------------------
 # global stuff
 #------------------------------------------------------------------
-$VERSION = '0.01';
-$revision = '$Id: Rcs.pm,v 1.5 1998/01/10 03:09:43 freter Exp freter $';
+$VERSION = '0.03';
+$revision = '$Id: Rcs.pm,v 1.7 1998/02/23 14:02:44 freter Exp $';
 my $Rcs_Bin_Dir = '/usr/local/bin';
 my $Quiet = 1;    # RCS quiet mode
 
@@ -567,7 +567,7 @@ Rcs - Perl Class for Revision Control System (RCS).
 
 =head1 SYNOPSIS
 
-    use Version::Rcs;
+    use Rcs;
 
 =head1 DESCRIPTION
 
@@ -766,10 +766,10 @@ The B<rcsclean> method calls the RCS rcsclean program.
 
 =head2 CREATE ACCESS LIST
 
-Using method B<rcs> with the CB<-a> switch allows you to add users to
+Using method B<rcs> with the B<-a> switch allows you to add users to
 the access list of an RCS archive file.
 
-    use Version::Rcs;
+    use Rcs;
     $obj = Rcs->new;
 
     $obj->rcsdir("./project_tree/archive");
@@ -794,7 +794,7 @@ Set class variables and create 'RCS' object.
 Set bin directory where RCS programs (e.g. rcs, ci, co) reside.  The
 default is '/usr/local/bin'.  This sets the bin directory for all objects.
 
-    use Version::Rcs;
+    use Rcs;
     Rcs->bindir('/usr/bin');
     $obj = Rcs->new;
 
@@ -837,7 +837,7 @@ Set class variables and create 'RCS' object.
 Set bin directory where RCS programs (e.g. rcs, ci, co) reside.  The
 default is '/usr/local/bin'.  This sets the bin directory for all objects.
 
-    use Version::Rcs;
+    use Rcs;
     Rcs->bindir('/usr/bin');
     Rcs->quiet(0);      # turn off quiet mode
     $obj = Rcs->new;
@@ -854,8 +854,8 @@ directory ('./RCS' by default).
     # Set working directory, is '.' by default
     $obj->workdir("./project_tree/src");
 
-Check in file using CB<-u> switch.  This will check in the file, and will then
-check out the file in an unlocked state.  The CB<-m> switch is used to set the
+Check in file using B<-u> switch.  This will check in the file, and will then
+check out the file in an unlocked state.  The B<-m> switch is used to set the
 revision comment.
 
 Command:
@@ -873,7 +873,7 @@ Set class variables and create 'RCS' object.
 Set bin directory where RCS programs (e.g. rcs, ci, co) reside.  The
 default is '/usr/local/bin'.  This sets the bin directory for all objects.
 
-    use Version::Rcs;
+    use Rcs;
     Rcs->bindir('/usr/bin');
     Rcs->quiet(0);      # turn off quiet mode
     $obj = Rcs->new;
@@ -924,7 +924,7 @@ Method B<rcsdiff> does an diff between revisions.
 
 Method B<rcsclean> will remove an unlocked working file.
 
-    use Version::Rcs;
+    use Rcs;
     Rcs->bindir('/usr/bin');
     Rcs->quiet(0);      # turn off quiet mode
     $obj = Rcs->new;

@@ -54,7 +54,7 @@ Rcs - Perl Class for Revision Control System (RCS).
 <H1><A NAME="SYNOPSIS">SYNOPSIS
 
 </A></H1>
-<PRE>    use Version::Rcs;
+<PRE>    use Rcs;
 </PRE>
 
 <P>
@@ -460,12 +460,12 @@ The <STRONG>rcsclean</STRONG> method calls the RCS rcsclean program.
 <H2><A NAME="CREATE_ACCESS_LIST">CREATE ACCESS LIST
 
 </A></H2>
-Using method <STRONG>rcs</STRONG> with the C<STRONG>-a</STRONG> switch allows you to add users to the access list of an RCS archive file.
+Using method <STRONG>rcs</STRONG> with the <STRONG>-a</STRONG> switch allows you to add users to the access list of an RCS archive file.
 
 
 <P>
 
-<PRE>    use Version::Rcs;
+<PRE>    use Rcs;
     $obj = Rcs-&gt;new;
 </PRE>
 
@@ -513,7 +513,7 @@ sets the bin directory for all objects.
 
 <P>
 
-<PRE>    use Version::Rcs;
+<PRE>    use Rcs;
     Rcs-&gt;bindir('/usr/bin');
     $obj = Rcs-&gt;new;
 </PRE>
@@ -586,7 +586,7 @@ sets the bin directory for all objects.
 
 <P>
 
-<PRE>    use Version::Rcs;
+<PRE>    use Rcs;
     Rcs-&gt;bindir('/usr/bin');
     Rcs-&gt;quiet(0);      # turn off quiet mode
     $obj = Rcs-&gt;new;
@@ -618,8 +618,8 @@ directory ('./RCS' by default).
 
 <P>
 
-Check in file using C<STRONG>-u</STRONG> switch. This will check in the file, and will then check out the file in an
-unlocked state. The C<STRONG>-m</STRONG> switch is used to set the revision comment.
+Check in file using <STRONG>-u</STRONG> switch. This will check in the file, and will then check out the file in an
+unlocked state. The <STRONG>-m</STRONG> switch is used to set the revision comment.
 
 
 <P>
@@ -657,7 +657,7 @@ sets the bin directory for all objects.
 
 <P>
 
-<PRE>    use Version::Rcs;
+<PRE>    use Rcs;
     Rcs-&gt;bindir('/usr/bin');
     Rcs-&gt;quiet(0);      # turn off quiet mode
     $obj = Rcs-&gt;new;
@@ -759,7 +759,7 @@ Method <STRONG>rcsclean</STRONG> will remove an unlocked working file.
 
 <P>
 
-<PRE>    use Version::Rcs;
+<PRE>    use Rcs;
     Rcs-&gt;bindir('/usr/bin');
     Rcs-&gt;quiet(0);      # turn off quiet mode
     $obj = Rcs-&gt;new;

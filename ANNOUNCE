@@ -13,7 +13,7 @@ This Perl module should be of interest to anyone creating an RCS front end.
 
 Here's a quick and dirty example of how to check in a file.
 
-use Version::Rcs;
+use Rcs;
 
 $obj = Rcs->new;
 $obj->file('testfile.pl');

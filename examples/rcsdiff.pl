@@ -2,13 +2,13 @@
 #------------------------------------------
 # Use rcsdiff utility.
 #------------------------------------------
-use Version::Rcs;
+use Rcs;
 
-Version::Rcs->quiet(1);
+Rcs->quiet(1);
 
-my $obj = Version::Rcs->new;
+my $obj = Rcs->new;
 $obj->bindir('/usr/bin');
-print "Quiet mode set\n" if Version::Rcs->quiet;
+print "Quiet mode set\n" if Rcs->quiet;
 
 $obj->rcsdir("./project_tree/archive");
 $obj->workdir("./project_tree/src");

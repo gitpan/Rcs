@@ -2,11 +2,9 @@
 #------------------------------------------
 # Add users to access list.
 #------------------------------------------
-use Version::Rcs;
+use Rcs;
 
-Version::Rcs->bindir("/usr/bin");
-
-$obj = Version::Rcs->new;
+$obj = Rcs->new;
 
 $obj->rcsdir("./project_tree/archive");
 $obj->workdir("./project_tree/src");
