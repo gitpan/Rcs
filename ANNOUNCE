@@ -1,4 +1,4 @@
-A recent programming project required the creation of a Revision Control
+A programming project required the creation of a Revision Control
 System (RCS) front end.  I started with inline system calls to the RCS
 utilities, and by creating multiple parsing functions to extract information
 from an RCS archive file.
@@ -25,8 +25,6 @@ $obj->rcsdir("./project_tree/archive");
 $obj->workdir("./project_tree/src");
 
 $obj->ci('-mRevision Comment');
-
-Full documentation may be found at http://www.freter.com/perl/Rcs/Rcs.html
 
 If there's any interest, I would like to make Rcs.pm publicly available.
 Please let me know is you have any suggestions or comments.

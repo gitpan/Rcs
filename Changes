@@ -14,3 +14,6 @@ Revision history for Perl extension Rcs.
 
 1.04 Fri May 17 00:01:15 EDT 2002
 	- Method rcsmerge contributed by Wim Kerkhoff <wim@nyetwork.org>
+
+1.05 Tue Dec  9 03:54:07 EST 2003
+	- fixed bug reported by Henry (Hank) B. Ivy

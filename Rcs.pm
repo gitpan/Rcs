@@ -16,8 +16,8 @@ use vars qw(@ISA @EXPORT_OK);
 #------------------------------------------------------------------
 # global stuff
 #------------------------------------------------------------------
-$VERSION = '1.04';
-$revision = '$Id: Rcs.pm,v 1.27 2002/05/17 03:59:13 freter Exp $';
+$VERSION = '1.05';
+$revision = '$Id: Rcs.pm,v 1.28 2003/12/12 00:53:34 freter Exp $';
 my $Dir_Sep = ($^O eq 'MSWin32') ? '\\' : '/';
 my $Exe_Ext = ($^O eq 'MSWin32') ? '.exe' : '';
 my $Rcs_Bin_Dir = '/usr/local/bin';
@@ -894,14 +894,13 @@ sub _parse_rcs_header {
 
             # get user who has file locked
             while(<RCS_FILE>) {
-              my $done = 0;
-              my ($locker, $rev);
-              chomp;
-              s/\s//g;
-              ($locker, $rev) = split(/:/);
-              $done = 1 if $rev =~ s/;.*//;
-              $lock{$rev} = $locker;
-              last if $done;
+                s/\s+//g;          # remove all white space
+                next unless $_ ;   # skip blank line (now empty string)
+                last if /^;/;      # end of locks
+                my ($locker, $rev) = split(/:/);
+                $rev =~ s/;.*//;
+                $lock{$rev} = $locker;
+                last if /;$/;      # end of locks
             }
             next;
         }
@@ -1461,7 +1460,7 @@ Raju Krishnamurthy, E<lt>F<raju_k@iname.com>E<gt>
 
 =head1 COPYRIGHT
 
-Copyright (C) 1997,1998,1999,2000,2001 Craig Freter.  All rights reserved.
+Copyright (C) 1997,2003 Craig Freter.  All rights reserved.
 This program is free software; you can redistribute it and/or
 modify it under the same terms as Perl itself.
 
