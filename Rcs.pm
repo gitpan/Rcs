@@ -16,8 +16,8 @@ use vars qw(@ISA @EXPORT_OK);
 #------------------------------------------------------------------
 # global stuff
 #------------------------------------------------------------------
-$VERSION = '1.03';
-$revision = '$Id: Rcs.pm,v 1.25 2001/11/04 00:01:11 freter Exp $';
+$VERSION = '1.04';
+$revision = '$Id: Rcs.pm,v 1.27 2002/05/17 03:59:13 freter Exp $';
 my $Dir_Sep = ($^O eq 'MSWin32') ? '\\' : '/';
 my $Exe_Ext = ($^O eq 'MSWin32') ? '.exe' : '';
 my $Rcs_Bin_Dir = '/usr/local/bin';
@@ -616,7 +616,7 @@ sub rlog {
     my $param_str = join(' ', @param);
     $param_str =~ s/([\w-]+)/$1/g;
 
-    my $archive_file = $rcsdir . $Dir_Sep . $arcfile . $self->arcext;
+    my $archive_file = $rcsdir . $Dir_Sep . $arcfile;
     return(_rcsError "rlog program $rlogprog not found") unless -e $rlogprog;
     return(_rcsError "rlog program $rlogprog not executable") unless -x $rlogprog;
     open(RLOG, "$rlogprog $param_str $archive_file |")
@@ -625,6 +625,34 @@ sub rlog {
     my @logoutput = <RLOG>;
     close RLOG;
     return(_rcsError "$rlogprog failed") if $?;
+    @logoutput;
+}
+
+#------------------------------------------------------------------
+# rcsmerge
+# Execute RCS 'rcsmerge' program.
+#------------------------------------------------------------------
+sub rcsmerge {
+    my $self = shift;
+    my @param = @_;
+
+    my $rcsmergeprog = $self->bindir . $Dir_Sep . 'rcsmerge' . $Exe_Ext;
+    my $rcsdir = $self->rcsdir;
+    my $arcfile = $self->arcfile || $self->file;
+
+    # un-taint parameter string
+    my $param_str = join(' ', @param);
+    $param_str =~ s/([\w-]+)/$1/g;
+
+    my $archive_file = $rcsdir . $Dir_Sep . $arcfile;
+    return(_rcsError "rcsmerge program $rcsmergeprog not found") unless -e $rcsmergeprog;
+    return(_rcsError "rcsmerge program $rcsmergeprog not executable") unless -x $rcsmergeprog;
+    open(RCSMERGE, "$rcsmergeprog $param_str $archive_file |")
+        or return(_rcsError "Can't fork $rcsmergeprog $!");
+
+    my @logoutput = <RCSMERGE>;
+    close RCSMERGE;
+    return(_rcsError "$rcsmergeprog failed") if $?;
     @logoutput;
 }
 

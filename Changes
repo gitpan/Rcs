@@ -11,3 +11,6 @@ Revision history for Perl extension Rcs.
 
 1.03 Sat Nov  3 18:55:19 EST 2001
 	- fixed another bug in lock method discovered by Michael Keller
+
+1.04 Fri May 17 00:01:15 EDT 2002
+	- Method rcsmerge contributed by Wim Kerkhoff <wim@nyetwork.org>
