@@ -2,15 +2,17 @@
 #------------------------------------------
 # rcsclean utility
 #------------------------------------------
+use strict;
 use Rcs;
 
 Rcs->quiet(0);      # turn off quiet mode
-$obj = Rcs->new;
+Rcs->bindir('/usr/bin');
+my $obj = Rcs->new;
 
 print "Quiet mode NOT set\n" unless Rcs->quiet;
 
-$obj->rcsdir("./project_tree/archive");
-$obj->workdir("./project_tree/src");
-$obj->file("cornholio.pl");
+$obj->rcsdir("./project/RCS");
+$obj->workdir("./project/src");
+$obj->file("testfile");
 
 $obj->rcsclean;

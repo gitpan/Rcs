@@ -2,12 +2,12 @@
 #------------------------------------------
 # Check-in source file.
 #------------------------------------------
+use strict;
 use Rcs;
 
+Rcs->bindir('/usr/bin');
 Rcs->quiet(0);  # turn off quiet mode
-
 my $obj = Rcs->new;
-$obj->bindir('/usr/bin');
 
 print "Quiet mode set\n" if Rcs->quiet;
 

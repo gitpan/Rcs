@@ -1,4 +1,4 @@
-This is Perl Class Rcs.pm 0.05, a front-end to Revision Contron System (RCS)
+This is Perl Class Rcs.pm 0.06, a front-end to Revision Contron System (RCS)
 Utilities.
 
 New in Version 0.04:
@@ -6,6 +6,9 @@ Fixed bug found by David Green <greendjf@cvhp152.gpt.co.uk>
 
 New in Version 0.05:
 Added 'revdate' method
+
+New in Version 0.06:
+Added 'dates' method contributed by David Green <greendjf@cvhp152.gpt.co.uk>
 
 Install Rcs.pm as you would any Perl 5 module:
 

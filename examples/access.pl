@@ -2,17 +2,20 @@
 #------------------------------------------
 # Add users to access list.
 #------------------------------------------
+use strict;
 use Rcs;
 
-$obj = Rcs->new;
+Rcs->bindir('/usr/bin');
+Rcs->quiet(0);
+my $obj = Rcs->new;
 
-$obj->rcsdir("./project_tree/archive");
-$obj->workdir("./project_tree/src");
-$obj->file("cornholio.pl");
+$obj->rcsdir("./project/RCS");
+$obj->workdir("./project/src");
+$obj->file("testfile");
 
-@users = qw(beavis butthead);
+my @users = qw(beavis butthead);
 $obj->rcs("-a@users");
 
-$filename = $obj->file;
-@access_list = $obj->access;
+my $filename = $obj->file;
+my @access_list = $obj->access;
 print "Users @access_list are on the access list of $filename\n";

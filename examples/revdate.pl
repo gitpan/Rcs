@@ -1,22 +1,28 @@
 #!/usr/local/bin/perl -w
 #------------------------------------------
-# Add users to access list.
+# Get revision date
 #------------------------------------------
+use strict;
 use Rcs;
 
-$obj = Rcs->new;
+Rcs->bindir('/usr/bin');
+my $obj = Rcs->new;
 
 $obj->rcsdir("./project/RCS");
 $obj->workdir("./project/src");
 $obj->file("testfile");
+my $revision = shift || $obj->head;
+die "Revision $revision does not exist\n"
+    unless grep /^$revision$/, $obj->revisions;
 
 # scalar mode
-$scalar_date = $obj->revdate;
-print "Scalar date = $scalar_date\n";
-$date_str = localtime($scalar_date);
-print "Scalar date string = $date_str\n";
+my $date_num = $obj->revdate($revision);
+print "Revision : Date number = $revision : $date_num\n";
+
+my $date_str = localtime($date_num);
+print "Revision : Date string = $revision : $date_str\n";
 
 # list mode
-@list_date = $obj->revdate;
-print "List date = @list_date\n";
+my @list_date = $obj->revdate($revision);
+print "Revision : Date array = $revision : @list_date\n";
 

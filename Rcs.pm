@@ -8,8 +8,8 @@ use vars qw($VERSION $revision);
 #------------------------------------------------------------------
 # global stuff
 #------------------------------------------------------------------
-$VERSION = '0.05';
-$revision = '$Id: Rcs.pm,v 1.10 1998/05/09 21:45:49 freter Exp $';
+$VERSION = '0.06';
+$revision = '$Id: Rcs.pm,v 1.11 1998/07/05 18:29:06 freter Exp $';
 my $Rcs_Bin_Dir = '/usr/local/bin';
 my $Rcs_Dir = './RCS';
 my $Work_Dir = '.';
@@ -170,6 +170,29 @@ sub co {
 
     # re-parse RCS file
     _parse_rcs($self);
+}
+
+#------------------------------------------------------------------
+# dates
+# Return a hash of revision dates, keyed on revision, when called
+# in list mode.
+# Return the most recent date when called in scalar mode.
+#
+# RCS stores dates in GMT.
+# The date values are system dates.
+#------------------------------------------------------------------
+sub dates {
+    my $self = shift;
+
+    if (not defined $self->{DATE}) {
+        _parse_rcs($self);
+    }
+
+    my %DatesHash = %{$self->{DATE}};
+    my @dates_list = sort {$b<=>$a} values %DatesHash;
+    my $MostRecent = $dates_list[0];
+
+    return wantarray ? %DatesHash : $MostRecent;
 }
 
 #------------------------------------------------------------------
@@ -383,11 +406,7 @@ sub revdate {
     my %date_array = %{ $self->{DATE} };
     my $date_str = $date_array{$revision};
 
-    my ($year, $mon, $mday, $hour, $min, $sec) = split(/\./, $date_str);
-    $mon--;        # convert to 0-11 range
-    my @date = ($sec,$min,$hour,$mday,$mon,$year);
-
-    return wantarray ? localtime(timegm(@date)) : timegm(@date);
+    return wantarray ? localtime($date_str) : $date_str;
 }
 
 #------------------------------------------------------------------
@@ -571,14 +590,21 @@ sub _parse_rcs {
             chomp;
             push @revisions, $_;
 
-            # get author, date and state of each revision
+            # get author, state and date of each revision
             my $next_line = <RCS_FILE>;
-            chop(my $date   = (split(/\s+/, $next_line))[1]);
             chop(my $author = (split(/\s+/, $next_line))[3]);
             chop(my $state  = (split(/\s+/, $next_line))[5]);
-            $date{$_} =   $date;
+            chop(my $date   = (split(/\s+/, $next_line))[1]);
+
+            # store date as date number
+            my ($year, $mon, $mday, $hour, $min, $sec) = split(/\./, $date);
+            $mon--;        # convert to 0-11 range
+            my @date = ($sec,$min,$hour,$mday,$mon,$year);
+
+            # store value in hash using revision as key
             $author{$_} = $author;
             $state{$_} =  $state;
+            $date{$_} =   timegm(@date);
         }
     }
     close RCS_FILE;
@@ -726,7 +752,7 @@ is used if no revision argument is passed to method.
 The B<symbol> method returns the sysbol(s) associated with a revision.
 If called in list context, method returns all symbols associated with
 revision.  If called in scalar context, method returns last symbol
-assciated with revision.  The head revision is used if no revision argument
+assciated with a revision.  The head revision is used if no revision argument
 is passed to method.
 
     # list context, returns all symbols associated with revision 1.3
@@ -755,6 +781,21 @@ system date number.  If called is list context, the list
     # list mode
     @list_date = $obj->revdate;
     print "List date = @list_date\n";
+
+The B<dates> method returns a hash of revision dates, keyed on revision.  The
+hash values are system date numbers.  When called in scalar mode, the method
+returns the most recent revision date.
+
+    # list mode
+    %DatesHash = obj->dates;
+    @dates_list = sort {$b<=>$a} values %DatesHash;
+    $MostRecent = $dates_list[0];
+
+    # scalar mode
+    $most_recent = $obj->dates;
+    print "Most recent date = $most_recent\n";
+    $most_recent_str = localtime($most_recent);
+    print "Most recent date string = $most_recent_str\n";
 
 =head2 RCS SYSTEM METHODS
 
@@ -992,9 +1033,15 @@ Method B<rcsclean> will remove an unlocked working file.
 
 Craig Freter, E<lt>F<craig@freter.com>E<gt>
 
+=head1 CONTRIBUTOR
+
+David Green, E<lt>F<greendjf@cvhp152.gpt.co.uk>E<gt>
+
+David Green contributed the B<dates> method.
+
 =head1 COPYRIGHT
 
-Copyright (C) 1997, Craig Freter.  All rights reserved.
+Copyright (C) 1997,1998 Craig Freter.  All rights reserved.
 This program is free software; you can redistribute it and/or
 modify it under the same terms as Perl itself.
 

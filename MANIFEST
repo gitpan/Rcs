@@ -4,15 +4,11 @@ Makefile.PL
 README
 Rcs.html
 Rcs.pm
-examples
 examples/access.pl
 examples/ci.pl
 examples/co.pl
 examples/parse.pl
-examples/project
-examples/project/RCS
 examples/project/RCS/testfile,v
-examples/project/src
 examples/project/src/testfile
 examples/rcsclean.pl
 examples/rcsdiff.pl
@@ -20,4 +16,6 @@ examples/revdate.pl
 examples/rlog.pl
 examples/ci-tree.pl
 examples/co-tree.pl
+examples/dates.pl
+examples/unlock.pl
 test.pl

@@ -35,6 +35,7 @@
 	</UL>
 
 	<LI><A HREF="#AUTHOR">AUTHOR</A>
+	<LI><A HREF="#CONTRIBUTOR">CONTRIBUTOR</A>
 	<LI><A HREF="#COPYRIGHT">COPYRIGHT</A>
 </UL>
 <!-- INDEX END -->
@@ -307,8 +308,8 @@ revision argument is passed to method.
 The <STRONG>symbol</STRONG> method returns the <CODE>sysbol(s)</CODE> associated with a revision. If
 called in list context, method returns all symbols associated with
 revision. If called in scalar context, method returns last symbol assciated
-with revision. The head revision is used if no revision argument is passed
-to method.
+with a revision. The head revision is used if no revision argument is
+passed to method.
 
 
 <P>
@@ -357,6 +358,30 @@ date number. If called is list context, the list
 <PRE>    # list mode
     @list_date = $obj-&gt;revdate;
     print &quot;List date = @list_date\n&quot;;
+</PRE>
+
+<P>
+
+The <STRONG>dates</STRONG> method returns a hash of revision dates, keyed on revision. The hash values
+are system date numbers. When called in scalar mode, the method returns the
+most recent revision date.
+
+
+<P>
+
+<PRE>    # list mode
+    %DatesHash = obj-&gt;dates;
+    @dates_list = sort {$b&lt;=&gt;$a} values %DatesHash;
+    $MostRecent = $dates_list[0];
+</PRE>
+
+<P>
+
+<PRE>    # scalar mode
+    $most_recent = $obj-&gt;dates;
+    print &quot;Most recent date = $most_recent\n&quot;;
+    $most_recent_str = localtime($most_recent);
+    print &quot;Most recent date string = $most_recent_str\n&quot;;
 </PRE>
 
 <P>
@@ -822,12 +847,29 @@ Craig Freter, &lt;<EM>craig@freter.com</EM>&gt;
 
 <P>
 <HR>
+<H1><A NAME="CONTRIBUTOR">CONTRIBUTOR
+
+</A></H1>
+David Green, &lt;<EM>greendjf@cvhp152.gpt.co.uk</EM>&gt;
+
+
+
+
+<P>
+
+David Green contributed the <STRONG>dates</STRONG> method.
+
+
+<P>
+
+<P>
+<HR>
 <H1><A NAME="COPYRIGHT">COPYRIGHT
 
 </A></H1>
-Copyright (C) 1997, Craig Freter. All rights reserved. This program is free
-software; you can redistribute it and/or modify it under the same terms as
-Perl itself.
+Copyright (C) 1997,1998 Craig Freter. All rights reserved. This program is
+free software; you can redistribute it and/or modify it under the same
+terms as Perl itself.
 
 
 <P>

@@ -1,22 +1,24 @@
-#!/usr/local/bin/perl
+#!/usr/local/bin/perl -w
 #------------------------------------------
 # Parse RCS archive file.
 #------------------------------------------
+use strict;
 use Rcs;
 
-$obj = Rcs->new;
+Rcs->bindir('/usr/bin');
+my $obj = Rcs->new;
 
-$obj->rcsdir("./project_tree/archive");
-$obj->workdir("./project_tree/src");
-$obj->file("cornholio.pl");
+$obj->rcsdir("./project/RCS");
+$obj->workdir("./project/src");
+$obj->file("testfile");
 
-$head_rev = $obj->head;
-$locker = $obj->lock;
-$author = $obj->author;
-@access = $obj->access;
-@revisions = $obj->revisions;
+my $head_rev = $obj->head;
+my $locker = $obj->lock;
+my $author = $obj->author;
+my @access = $obj->access;
+my @revisions = $obj->revisions;
 
-$filename = $obj->file;
+my $filename = $obj->file;
 
 if ($locker) {
     print "Head revision $head_rev is locked by $locker\n";
@@ -31,6 +33,6 @@ if (@access) {
 }
 
 print "\nList of all revisions of $filename\n";
-foreach $rev (@revisions) {
-    print "Revision: $rev\n";
+foreach (@revisions) {
+    print "Revision: $_\n";
 }

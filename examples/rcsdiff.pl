@@ -2,6 +2,7 @@
 #------------------------------------------
 # Use rcsdiff utility.
 #------------------------------------------
+use strict;
 use Rcs;
 
 Rcs->quiet(1);
@@ -10,9 +11,9 @@ my $obj = Rcs->new;
 $obj->bindir('/usr/bin');
 print "Quiet mode set\n" if Rcs->quiet;
 
-$obj->rcsdir("./project_tree/archive");
-$obj->workdir("./project_tree/src");
-$obj->file("cornholio.pl");
+$obj->rcsdir("./project/RCS");
+$obj->workdir("./project/src");
+$obj->file("testfile");
 
 print "Diff of current working file\n";
 if ($obj->rcsdiff) {       # scalar context
