@@ -8,8 +8,8 @@ use vars qw($VERSION $revision);
 #------------------------------------------------------------------
 # global stuff
 #------------------------------------------------------------------
-$VERSION = '0.08';
-$revision = '$Id: Rcs.pm,v 1.14.1.2 1998/09/11 07:38:48 freter Exp $';
+$VERSION = '0.09';
+$revision = '$Id: Rcs.pm,v 1.14.1.3 1998/10/19 18:04:48 freter Exp $';
 my $Dir_Sep = ($^O eq 'MSWin32') ? '\\' : '/';
 my $Exe_Ext = ($^O eq 'MSWin32') ? '.exe' : '';
 my $Rcs_Bin_Dir = '/usr/local/bin';
@@ -753,7 +753,10 @@ sub _parse_rcs_body {
     # loop through 'text' section to avoid capturing bogus info
     continue {
         if (/^text$/) {  # 'text' tag should always be there, but check anyway
-            while (<RCS_FILE>) {last if /^\@$/}
+            while (<RCS_FILE>) {
+                s/\@\@//g;      # RCS replaces single '@' with '@@'
+                last if /\@$/
+            }
         }
     }
 
