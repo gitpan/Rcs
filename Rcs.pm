@@ -7,8 +7,8 @@ use vars qw($VERSION $revision);
 #------------------------------------------------------------------
 # global stuff
 #------------------------------------------------------------------
-$VERSION = '0.03';
-$revision = '$Id: Rcs.pm,v 1.7 1998/02/23 14:02:44 freter Exp $';
+$VERSION = '0.04';
+$revision = '$Id: Rcs.pm,v 1.7.1.1 1998/03/08 01:12:35 freter Exp $';
 my $Rcs_Bin_Dir = '/usr/local/bin';
 my $Quiet = 1;    # RCS quiet mode
 
@@ -32,9 +32,9 @@ sub new {
     $self->{LOCK}       = undef;
     $self->{ACCESS}     = [];
     $self->{REVISIONS}  = [];
-    $self->{REVINFO}    = {};
-    $self->{STATE}      = {};
-    $self->{SYMBOLS}    = {};
+    $self->{REVINFO}    = undef;
+    $self->{STATE}      = undef;
+    $self->{SYMBOLS}    = undef;
     bless($self, $class);
     return $self;
 }
