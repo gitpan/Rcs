@@ -1,7 +1,7 @@
 <HTML>
 <HEAD>
 <TITLE>Rcs - Perl Object Class for Revision Control System.</TITLE>
-<LINK REV="made" HREF="mailto:root@cc454657-a.owml1.md.home.com">
+<LINK REV="made" HREF="mailto:prospector@porky.devel.redhat.com">
 </HEAD>
 
 <BODY>
@@ -167,13 +167,21 @@ is used if no revision argument is passed to method.</P>
     $head = $obj-&gt;head;</PRE>
 <P>The <STRONG>lock</STRONG> method returns the locker of the revision.  The method returns
 null if the revision is unlocked.  The head revision is used if no revision
-argument is passed to method.</P>
+argument is passed to method.  When called in list context the lock method
+returns a hash of all locks.</P>
 <PRE>
     # returns locker of revision '1.3'
     $locker = $obj-&gt;lock('1.3');</PRE>
 <PRE>
     # returns locker of head revision
     $locker = $obj-&gt;lock;</PRE>
+<PRE>
+    # return hash of all locks
+    %locks = $obj-&gt;lock;    # called in list context
+    foreach $rev (keys %locks) {
+        $locker = $locks{$rev};
+        print &quot;User $locker has revision $rev locked\n&quot;;
+    }</PRE>
 <P>The <STRONG>revisions</STRONG> method returns a list of all revisions of archive file.</P>
 <PRE>
     @revisions = $obj-&gt;revisions;</PRE>
@@ -475,7 +483,8 @@ directory ('./RCS' by default).</P>
 <HR>
 <H1><A NAME="contributors">CONTRIBUTORS</A></H1>
 <P>David Green, &lt;<EM><A HREF="mailto:greendjf@cvhp152.gpt.marconicomms.com">greendjf@cvhp152.gpt.marconicomms.com</A></EM>&gt;
-Jamie O'Shaughnessy, &lt;<EM><A HREF="mailto:jamie@thanatar.demon.co.uk">jamie@thanatar.demon.co.uk</A></EM>&gt;</P>
+Jamie O'Shaughnessy, &lt;<EM><A HREF="mailto:jamie@thanatar.demon.co.uk">jamie@thanatar.demon.co.uk</A></EM>&gt;
+Raju Krishnamurthy, &lt;<EM><A HREF="mailto:raju_k@iname.com">raju_k@iname.com</A></EM>&gt;</P>
 <P>
 <HR>
 <H1><A NAME="copyright">COPYRIGHT</A></H1>

@@ -1,5 +1,8 @@
-This is Perl Object Class Rcs.pm 1.01, a front-end to Revision Contron System (RCS)
+This is Perl Object Class Rcs.pm 1.02, a front-end to Revision Contron System (RCS)
 Utilities.
+
+New in Version 1.02:
+Bug fixes.
 
 New in Version 1.01:
 use Rcs qw(nonFatal Verbose);

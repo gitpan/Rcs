@@ -5,3 +5,6 @@ Revision history for Perl extension Rcs.
 
 1.01  Wed Oct  3 19:59:38 EDT 2001
 	- added nonFatal Verbose tags
+
+1.02 Fri Oct 19 16:57:55 EDT 2001
+	- fixed bug in lock method

@@ -16,8 +16,8 @@ use vars qw(@ISA @EXPORT_OK);
 #------------------------------------------------------------------
 # global stuff
 #------------------------------------------------------------------
-$VERSION = '1.01';
-$revision = '$Id: Rcs.pm,v 1.21 2001/10/03 23:58:15 freter Exp $';
+$VERSION = '1.02';
+$revision = '$Id: Rcs.pm,v 1.24 2001/10/19 20:53:59 freter Exp $';
 my $Dir_Sep = ($^O eq 'MSWin32') ? '\\' : '/';
 my $Exe_Ext = ($^O eq 'MSWin32') ? '.exe' : '';
 my $Rcs_Bin_Dir = '/usr/local/bin';
@@ -186,7 +186,7 @@ sub ci {
     # run program
     return(_rcsError "ci program $ciprog not found")      unless -e $ciprog;
     return(_rcsError "ci program $ciprog not executable") unless -x $ciprog;
-    system($ciprog, @param) == 0 or return(_rcsError "$!");
+    system($ciprog, @param) == 0 or return(_rcsError "$?");
 
     # re-parse RCS file and clear comments hash
     _parse_rcs_header($self);
@@ -218,7 +218,7 @@ sub co {
     # run program
     return(_rcsError "co program $coprog not found") unless -e $coprog;
     return(_rcsError "co program $coprog not executable") unless -x $coprog;
-    system($coprog, @param) == 0 or return(_rcsError "$!");
+    system($coprog, @param) == 0 or return(_rcsError "$?");
 
     # re-parse RCS file and clear comments hash
     _parse_rcs_header($self);
@@ -390,7 +390,9 @@ sub lock {
     if (not defined $self->{LOCK}) {
         _parse_rcs_header($self);
     }
-    return $self->{LOCK};
+    my $revision = shift || $self->{HEAD};
+    
+    return wantaray ? %{ $self->{LOCK} } : ${ $self->{LOCK} }{$revision};
 }
 
 #------------------------------------------------------------------
@@ -784,9 +786,12 @@ sub _parse_rcs_body {
     # loop through 'text' section to avoid capturing bogus info
     continue {
         if (/^text$/) {  # 'text' tag should always be there, but check anyway
-            while (<RCS_FILE>) {
-                s/\@\@//g;      # RCS replaces single '@' with '@@'
-                last if /\@$/
+            $_ = <RCS_FILE>;         # read first line
+            if (not /^\@\@$/) {      # forced revisions have single '@@' in text section
+                while (<RCS_FILE>) {
+                    s/\@\@//g;       # RCS replaces single '@' with '@@'
+                    last if /\@$/
+                }
             }
         }
     }
@@ -805,7 +810,7 @@ sub _parse_rcs_header {
     my $self = shift;
     local $_;
 
-    my ($head, $lock);
+    my ($head, %lock);
     my (@access_list, @revisions);
     my (%author, %date, %state, %symbols);
 
@@ -837,7 +842,6 @@ sub _parse_rcs_header {
             next;
         }
 
-        # get locker
         # get symbols
         if (/^symbols$/) {
             while (<RCS_FILE>) {
@@ -855,14 +859,22 @@ sub _parse_rcs_header {
         if (/^locks/) {
 
             # file not locked
-            if (/strict/) {
-                $lock = '';
+            if (/;$/) {
+                %lock = ();
                 next;
             }
 
             # get user who has file locked
-            my $next_line = <RCS_FILE>;    # read next line
-            ($lock) = $next_line =~ m/^\s*(\w+):/;
+            while(<RCS_FILE>) {
+              my $done = 0;
+              my ($locker, $rev);
+              chomp;
+              s/\s//g;
+              ($locker, $rev) = split(/:/);
+              $done = 1 if $rev =~ s/;.*//;
+              $lock{$rev} = $locker;
+              last if $done;
+            }
             next;
         }
 
@@ -891,7 +903,7 @@ sub _parse_rcs_header {
     close RCS_FILE;
 
     $self->{HEAD}        = $head;
-    $self->{LOCK}        = $lock;
+    $self->{LOCK}        = \%lock;
     $self->{ACCESS}      = \@access_list;
     $self->{REVISIONS}   = \@revisions;
     $self->{AUTHOR}      = \%author;
@@ -1063,13 +1075,21 @@ The B<head> method returns the head revision.
 
 The B<lock> method returns the locker of the revision.  The method returns
 null if the revision is unlocked.  The head revision is used if no revision
-argument is passed to method.
+argument is passed to method.  When called in list context the lock method
+returns a hash of all locks.
 
     # returns locker of revision '1.3'
     $locker = $obj->lock('1.3');
 
     # returns locker of head revision
     $locker = $obj->lock;
+
+    # return hash of all locks
+    %locks = $obj->lock;    # called in list context
+    foreach $rev (keys %locks) {
+        $locker = $locks{$rev};
+        print "User $locker has revision $rev locked\n";
+    }
 
 The B<revisions> method returns a list of all revisions of archive file.
 
@@ -1407,6 +1427,7 @@ Craig Freter, E<lt>F<craig@freter.com>E<gt>
 
 David Green, E<lt>F<greendjf@cvhp152.gpt.marconicomms.com>E<gt>
 Jamie O'Shaughnessy, E<lt>F<jamie@thanatar.demon.co.uk>E<gt>
+Raju Krishnamurthy, E<lt>F<raju_k@iname.com>E<gt>
 
 =head1 COPYRIGHT
 
