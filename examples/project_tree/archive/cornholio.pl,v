@@ -1,0 +1,59 @@
+head	1.3;
+access
+	beavis
+	butthead;
+symbols;
+locks
+	freter:1.3; strict;
+comment	@# @;
+
+
+1.3
+date	98.01.31.13.08.30;	author freter;	state Exp;
+branches;
+next	1.2;
+
+1.2
+date	97.12.20.17.15.45;	author freter;	state Exp;
+branches;
+next	1.1;
+
+1.1
+date	97.12.15.21.07.14;	author freter;	state Exp;
+branches;
+next	;
+
+
+desc
+@Program Description
+@
+
+
+1.3
+log
+@Revision Comment
+@
+text
+@testing Rcs Perl class
+NEW line
+@
+
+
+1.2
+log
+@Revision Comment
+@
+text
+@d2 1
+a2 1
+new line
+@
+
+
+1.1
+log
+@Initial revision
+@
+text
+@d2 1
+@

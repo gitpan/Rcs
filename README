@@ -1,0 +1,18 @@
+This is Perl Class Rcs.pm 0.01, a front-end to Revision Contron System (RCS)
+Utilities.
+
+Install Rcs.pm as you would any Perl 5 module:
+
+    perl Makefile.PL
+    make
+    make install
+
+The documentation is contained in Rcs.pm in pod format.  The man pages
+will install automatically, or may be extracted manually by:
+
+    pod2man Rcs.pm > Rcs.man
+
+Please let me know is you have any suggestions or comments.
+
+Craig Freter
+<craig@freter.com>

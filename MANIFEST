@@ -1,0 +1,17 @@
+ANNOUNCE
+Changes
+MANIFEST
+Makefile.PL
+README
+Rcs.html
+Rcs.pm
+examples/access.pl
+examples/ci.pl
+examples/co.pl
+examples/parse.pl
+examples/rcsclean.pl
+examples/rlog.pl
+examples/project_tree/src/cornholio.pl
+examples/project_tree/archive/cornholio.pl,v
+examples/rcsdiff.pl
+test.pl
