@@ -16,8 +16,8 @@ use vars qw(@ISA @EXPORT_OK);
 #------------------------------------------------------------------
 # global stuff
 #------------------------------------------------------------------
-$VERSION = '1.02';
-$revision = '$Id: Rcs.pm,v 1.24 2001/10/19 20:53:59 freter Exp $';
+$VERSION = '1.03';
+$revision = '$Id: Rcs.pm,v 1.25 2001/11/04 00:01:11 freter Exp $';
 my $Dir_Sep = ($^O eq 'MSWin32') ? '\\' : '/';
 my $Exe_Ext = ($^O eq 'MSWin32') ? '.exe' : '';
 my $Rcs_Bin_Dir = '/usr/local/bin';
@@ -392,7 +392,7 @@ sub lock {
     }
     my $revision = shift || $self->{HEAD};
     
-    return wantaray ? %{ $self->{LOCK} } : ${ $self->{LOCK} }{$revision};
+    return wantarray ? %{ $self->{LOCK} } : ${ $self->{LOCK} }{$revision};
 }
 
 #------------------------------------------------------------------
@@ -1426,7 +1426,9 @@ Craig Freter, E<lt>F<craig@freter.com>E<gt>
 =head1 CONTRIBUTORS
 
 David Green, E<lt>F<greendjf@cvhp152.gpt.marconicomms.com>E<gt>
+
 Jamie O'Shaughnessy, E<lt>F<jamie@thanatar.demon.co.uk>E<gt>
+
 Raju Krishnamurthy, E<lt>F<raju_k@iname.com>E<gt>
 
 =head1 COPYRIGHT

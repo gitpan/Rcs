@@ -8,3 +8,6 @@ Revision history for Perl extension Rcs.
 
 1.02 Fri Oct 19 16:57:55 EDT 2001
 	- fixed bug in lock method
+
+1.03 Sat Nov  3 18:55:19 EST 2001
+	- fixed another bug in lock method discovered by Michael Keller
